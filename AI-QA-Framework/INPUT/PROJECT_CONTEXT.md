@@ -2,7 +2,7 @@
 
 ## Project Name
 
-AI Mentor Bot
+Book store
 
 ## Project Type
 

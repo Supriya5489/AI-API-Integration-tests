@@ -1,4 +1,4 @@
-# API Inventory — AI Mentor Bot
+# API Inventory — Book store
 
 **Spec source:** `INPUT/swagger.json`
 **Spec version:** OpenAPI 3.0.1 — "FakeRESTApi.Web V1", version `v1`

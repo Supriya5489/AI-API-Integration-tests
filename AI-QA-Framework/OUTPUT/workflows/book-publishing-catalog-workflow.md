@@ -9,7 +9,7 @@
 
 ## Description
 
-The one genuinely cross-endpoint business process this API supports: assembling a complete catalog entry for a book — the book record itself, its author(s), and its cover photo — then verifying the assembled entry can be retrieved as a coherent whole. This is the composite of `WF-BOOK-001`, `WF-AUTHOR-001`/`WF-AUTHOR-002`, and `WF-COVERPHOTO-001`/`WF-COVERPHOTO-002`, and represents the realistic end-to-end flow a catalog-management client (e.g., an admin tool or the AI Mentor Bot's content pipeline) would perform when publishing a new book.
+The one genuinely cross-endpoint business process this API supports: assembling a complete catalog entry for a book — the book record itself, its author(s), and its cover photo — then verifying the assembled entry can be retrieved as a coherent whole. This is the composite of `WF-BOOK-001`, `WF-AUTHOR-001`/`WF-AUTHOR-002`, and `WF-COVERPHOTO-001`/`WF-COVERPHOTO-002`, and represents the realistic end-to-end flow a catalog-management client (e.g., an admin tool or the Book store's content pipeline) would perform when publishing a new book.
 
 ## Trigger
 

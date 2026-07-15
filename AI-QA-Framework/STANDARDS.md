@@ -10,6 +10,7 @@ This document defines the conventions all `OUTPUT/` artifacts must follow so tha
 - Per-endpoint files live under `OUTPUT/endpoints/` and are named `<METHOD>_<resource-path>.md`, e.g. `POST_users.md`, `GET_orders_id.md` (path params written without braces, joined with underscores).
 - Per-workflow files live under `OUTPUT/workflows/` and are named `<verb>-<noun>-workflow.md` in kebab-case, e.g. `user-signup-workflow.md`.
 - One file per entity — do not merge multiple endpoints or workflows into a single doc.
+- Automation artifacts live under `OUTPUT/automation/`, named `<ProjectName>.<tool>_collection.<ext>` plus a matching environment/config file (e.g. `AI_Mentor_Bot.postman_collection.json` + `AI_Mentor_Bot_UAT.postman_environment.json`), accompanied by `OUTPUT/automation/Automation_Collection_Notes.md` (from `TEMPLATES/Automation_Collection_Notes.md`).
 
 ## 2. ID Conventions
 
@@ -73,6 +74,7 @@ Risk tier determines minimum required coverage depth per `WORKFLOW.md` Phase 4.
 - Every `Risk` entry must link to ≥1 `Coverage` item, or state an explicit exclusion reason.
 - Every `Coverage` item must link to ≥1 `Test Case`.
 - Every `Test Case` must link to its `Automation Plan` classification.
+- Every `Test Case` classified `Automate Now` must be traceable to a specific request/test in the `OUTPUT/automation/` collection, recorded in `Automation_Collection_Notes.md`.
 - `Traceability.md` is the single source of truth for these links — other docs reference IDs, not duplicate content.
 - No orphaned IDs: an ID referenced in one doc must exist and be resolvable in its origin doc.
 

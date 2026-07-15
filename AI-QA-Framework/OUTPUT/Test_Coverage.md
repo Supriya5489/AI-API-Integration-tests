@@ -1,4 +1,4 @@
-# Test Coverage Plan — AI Mentor Bot
+# Test Coverage Plan — Book store
 
 **Planned on:** 2026-07-15
 **Planned by:** agent

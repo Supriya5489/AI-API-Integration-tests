@@ -1,4 +1,4 @@
-# Automation Plan — AI Mentor Bot
+# Automation Plan — Book store
 
 **Planned on:** 2026-07-15
 **Planned by:** agent
@@ -127,11 +127,19 @@ This is a one-time-per-test-case rule, not a per-field judgment call — it keep
 
 ## Tooling
 
+**Update (2026-07-15):** the user directed that the 35 Automate-Now test cases be implemented in **Postman/Newman**, superseding the pytest recommendation originally made below. The table is kept as-is for historical context (it remains valid guidance for the deferred/Automate-Later work and for teams without an existing Postman investment); the actual implemented artifacts are:
+
+- [`OUTPUT/automation/AI_Mentor_Bot.postman_collection.json`](automation/AI_Mentor_Bot.postman_collection.json) — 67 requests across 6 folders (ACTIVITY, AUTHOR, BOOK, COVERPHOTO, USER, CATALOG), covering all 35 Automate-Now test cases (some expand into setup + action + verify steps for self-contained fixture provisioning). Verified passing 67/67 requests, 93/93 assertions via Newman against the live UAT API.
+- [`OUTPUT/automation/AI_Mentor_Bot_UAT.postman_environment.json`](automation/AI_Mentor_Bot_UAT.postman_environment.json) — defines `baseUrl`.
+- Run via CLI: `newman run AI_Mentor_Bot.postman_collection.json -e AI_Mentor_Bot_UAT.postman_environment.json`.
+
+**Important:** building this collection surfaced that the live UAT instance is stateless (writes never persist, reads always serve fixed seed data) — see the amendment notes in `PROJECT_STATE.md`, `Risk_Assessment.md`, and `Test_Case.md`. The collection's assertions were designed around this reality (seed-id discovery for "get by id" checks, echo-based checks for creates/updates, logged-not-asserted checks for the Book/CoverPhoto/Author association lookups).
+
 | Layer | Tool/Framework | Notes |
 |---|---|---|
-| API test execution | pytest + `requests` | Chosen over Postman/Newman for this project because several assertions need precise control — `additionalProperties:false` rejection checks, `nullable` field handling, and exact int32 boundary values are easier to express and maintain in code than in a Postman collection. |
-| Contract/schema validation | `jsonschema` (Python), validating responses against schemas extracted from `INPUT/swagger.json` | Directly reuses the fetched spec as the schema source of truth, keeping Phase 9 regression re-validation mechanical when the spec changes. |
-| CI integration | GitHub Actions | Repository is already hosted on GitHub (`Supriya5489/AI-API-Integration-tests`); no new CI platform needed. |
+| API test execution | **Postman/Newman** (implemented) — originally recommended pytest + `requests` | Postman chosen per explicit user direction. The `additionalProperties:false`/nullable/boundary concerns noted below still apply and are handled via `pm.test` assertions in the collection's Tests scripts. |
+| Contract/schema validation | Inline `pm.test` assertions against expected shapes (implemented); `jsonschema` (Python) remains the recommendation if/when the Automate-Later suite is built in pytest | Full JSON-Schema validation against `INPUT/swagger.json` is not yet wired into the Postman suite — a reasonable next enhancement. |
+| CI integration | GitHub Actions running `newman run` | Repository is already hosted on GitHub (`Supriya5489/AI-API-Integration-tests`); Newman runs as a plain CLI step, no additional runtime needed beyond Node.js. |
 
 ## Execution Triggers
 

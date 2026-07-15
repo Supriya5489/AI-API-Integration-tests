@@ -1,9 +1,11 @@
-# Test Cases — AI Mentor Bot
+# Test Cases — Book store
 
 **Authored on:** 2026-07-15
 **Authored by:** agent
 
 All 62 test cases from Phase 5 (Test Case Design) are consolidated below in a single table, one row per test case, replacing the earlier one-file-per-test-case layout under `OUTPUT/test_cases/`. Fields map directly to `TEMPLATES/Test_Case.md`. None have been executed yet — `Status` is `Not Started` and `Actual Result`/`Pass/Fail` are placeholders to be filled in during Phase 8.
+
+> **Amendment (2026-07-15):** building and smoke-testing the Postman automation suite (`OUTPUT/automation/`) confirmed the live UAT instance is stateless — `POST`/`PUT`/`DELETE` are validated and echoed with `200` but never persisted, and `GET` always serves a fixed seed dataset regardless of any writes. This affects any test case whose "Steps"/"Expected Result" assume a freshly created/updated/deleted record is independently retrievable afterward — most notably **TC-BOOK-011, TC-BOOK-012, TC-CATALOG-003, and TC-CATALOG-006**, whose orphaning/association checks cannot observe real persistence on this instance (there's nothing stored to orphan). When executing these manually in Phase 8, expect and record `GET`-after-create/delete behavior against this reality rather than treating a non-persisting result as a defect. The automated versions of the applicable "Automate Now" cases already reflect this (see `OUTPUT/Automation_Plan.md`).
 
 ---
 

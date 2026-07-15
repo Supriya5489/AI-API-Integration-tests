@@ -104,7 +104,23 @@ This document defines the step-by-step process the agent follows to go from a ra
 
 ---
 
-## Phase 7 — Traceability Consolidation
+## Phase 7 — Automation Implementation
+
+**Input:** Approved Automation Plan (the "Automate Now" classification from Phase 6)
+
+**Activities:**
+- Build an executable automation collection/suite covering every "Automate Now" test case, using the tool chosen in `Automation_Plan.md` (e.g., Postman/Newman, pytest + requests).
+- Design each automated request/test to be self-contained: it provisions any fixture data it needs, exercises the endpoint(s) under test, and cleans up (e.g., deletes what it created) rather than depending on pre-existing external state — this keeps the suite safely re-runnable against a shared environment.
+- **Validate by actually executing the suite** at least once against the target environment (e.g., via Newman CLI, `pytest`) before considering this phase complete. An unexecuted collection is not a valid deliverable.
+- If the live run surfaces behavior that contradicts assumptions baked into earlier phases (e.g., undocumented persistence behavior, unexpected status codes, an endpoint that behaves differently than the spec implies), do not silently rewrite earlier conclusions — flag it explicitly and add a clearly labeled amendment note to the affected upstream docs (`Risk_Assessment.md`, `Test_Case.md`, `Automation_Plan.md`) so the discovery is traceable to when/how it was found.
+
+**Output:** `OUTPUT/automation/` containing the executable artifacts (e.g., `<ProjectName>.postman_collection.json` + `<ProjectName>_<Env>.postman_environment.json`, or an equivalent pytest suite) plus `OUTPUT/automation/Automation_Collection_Notes.md` (from `TEMPLATES/Automation_Collection_Notes.md`) documenting the tool, structure, Test-Case-ID-to-request mapping, execution record, and any environment-behavior findings.
+
+**Exit criteria:** Every "Automate Now" test case has a corresponding automated request/test; the suite has been run at least once against the target environment with real results recorded in `Automation_Collection_Notes.md`; any environment-behavior surprises are documented as amendments to affected upstream docs rather than left unreconciled.
+
+---
+
+## Phase 8 — Traceability Consolidation
 
 **Input:** All prior phase outputs
 
@@ -118,7 +134,7 @@ This document defines the step-by-step process the agent follows to go from a ra
 
 ---
 
-## Phase 8 — Execution & Reporting
+## Phase 9 — Execution & Reporting
 
 **Input:** Test cases (manual or automated) + Traceability matrix
 
@@ -133,13 +149,13 @@ This document defines the step-by-step process the agent follows to go from a ra
 
 ---
 
-## Phase 9 — Regression / Maintenance Loop
+## Phase 10 — Regression / Maintenance Loop
 
 **Trigger:** Spec change in `INPUT/`, new business workflow, or scheduled re-run.
 
 **Activities:**
 - Diff the new spec against the last inventoried version.
-- Re-run Phases 1–3 only for changed/added endpoints (delta analysis), then update coverage, test cases, automation plan, and traceability accordingly.
+- Re-run Phases 1–3 only for changed/added endpoints (delta analysis), then update coverage, test cases, automation plan, automation collection, and traceability accordingly.
 
 **Output:** Updated versions of all affected `OUTPUT/` artifacts.
 
@@ -157,7 +173,8 @@ This document defines the step-by-step process the agent follows to go from a ra
 | 4 | Test Coverage Plan | `Test_Coverage.md` |
 | 5 | Test Cases | `Test_Case.md` |
 | 6 | Automation Plan | `Automation_Plan.md` |
-| 7 | Traceability Matrix | `Traceability.md` |
-| 8 | Test Report | `Test_Report.md` |
+| 7 | Automation Collection (executable) + Notes | `Automation_Collection_Notes.md` |
+| 8 | Traceability Matrix | `Traceability.md` |
+| 9 | Test Report | `Test_Report.md` |
 
 Each phase's output feeds the next; skipping a phase or template requires an explicit, documented justification in `Test_Coverage.md`.

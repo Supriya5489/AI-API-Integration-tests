@@ -1,6 +1,6 @@
 # AI-QA-Framework
 
-An AI-driven framework for testing API integrations. Given an OpenAPI/Swagger contract, it produces a complete, traceable QA package — inventory, business workflow mapping, risk assessment, test coverage plan, test cases, automation plan, traceability matrix, and test report — using a consistent, reusable set of templates.
+An AI-driven framework for testing API integrations. Given an OpenAPI/Swagger contract, it produces a complete, traceable QA package — inventory, business workflow mapping, risk assessment, test coverage plan, test cases, automation plan, an executable automation collection, traceability matrix, and test report — using a consistent, reusable set of templates.
 
 It is project-agnostic: point it at any API spec and it produces the same structured deliverables, scaled to that API's size and risk profile.
 
@@ -15,7 +15,7 @@ It is project-agnostic: point it at any API spec and it produces the same struct
 The result is a fully traceable chain for every endpoint:
 
 ```
-Endpoint → Business Workflow → Risk Tier → Coverage Item → Test Case → Automation Status → Result
+Endpoint → Business Workflow → Risk Tier → Coverage Item → Test Case → Automation Status → Automation Collection → Result
 ```
 
 ## Core Documents
@@ -43,9 +43,11 @@ AI-QA-Framework/
 │   ├── Test_Coverage.md
 │   ├── Test_Case.md
 │   ├── Automation_Plan.md
+│   ├── Automation_Collection_Notes.md
 │   ├── Test_Report.md
 │   └── Traceability.md
 ├── OUTPUT/               # Generated deliverables for the current project
+│   └── automation/       # Executable automation artifacts (e.g., Postman collection + environment, or a pytest suite) + Automation_Collection_Notes.md
 └── INPUT/                # The API spec(s) under test
     ├── swagger.json
     ├── openapi.json
@@ -55,14 +57,15 @@ AI-QA-Framework/
 ## Using This Framework for a New Project
 
 1. **Drop your spec in `INPUT/`.** Only one spec should be authoritative per run — if multiple formats are present, confirm which one is current.
-2. **Run the lifecycle.** Work through `WORKFLOW.md` Phases 0–8 in order:
+2. **Run the lifecycle.** Work through `WORKFLOW.md` Phases 0–9 in order:
    - Phase 0–1: Validate the spec and build the API inventory.
    - Phase 2–3: Map business workflows and assess risk.
    - Phase 4: Get the test coverage plan reviewed/approved before writing test cases.
    - Phase 5–6: Write test cases and classify them for automation.
-   - Phase 7–8: Consolidate traceability, execute, and report.
+   - Phase 7: Build and execute the automation collection for every "Automate Now" test case — a plan without a validated, runnable collection isn't done.
+   - Phase 8–9: Consolidate traceability, execute, and report.
 3. **Check outputs against `STANDARDS.md`** before considering any deliverable final — naming, IDs, priority/severity labels, and traceability links must all comply.
-4. **Re-run on spec changes.** When the API contract changes, use Phase 9 (Regression Loop) to update only the affected endpoints/workflows rather than redoing everything from scratch.
+4. **Re-run on spec changes.** When the API contract changes, use Phase 10 (Regression Loop) to update only the affected endpoints/workflows rather than redoing everything from scratch.
 
 ## Reusing Across Projects
 

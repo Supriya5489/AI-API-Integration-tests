@@ -49,4 +49,4 @@ A user account can be created, retrieved, updated, and deleted, with reads refle
 ## Open Questions / Ambiguities
 
 - `password` is stored/returned as plaintext per the schema with no hashing or masking documented — this is a data-sensitivity concern to carry into Phase 3 Risk Assessment even for a test/demo API, since test design should default to secure-handling assumptions unless the contract proves otherwise.
-- No documented relationship between `User` and any other resource (e.g., `Activity`, `Book`) despite the project being named "AI Mentor Bot" — confirm with stakeholder whether an undocumented ownership link is expected in a future spec revision.
+- No documented relationship between `User` and any other resource (e.g., `Activity`, `Book`) despite the project being named "Book store" — confirm with stakeholder whether an undocumented ownership link is expected in a future spec revision.
