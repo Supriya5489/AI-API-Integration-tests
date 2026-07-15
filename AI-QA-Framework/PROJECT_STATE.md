@@ -22,7 +22,7 @@ This file tracks the current state of the QA lifecycle for the project currently
 | 3 — Risk Assessment | Complete | 2026-07-15 | 11 risk entries in `OUTPUT/Risk_Assessment.md`, covering all 27 endpoints and 8 workflows; 3 Critical, 4 High, 2 Medium/Low groupings |
 | 4 — Test Coverage Planning | Complete (approved) | 2026-07-15 | `OUTPUT/Test_Coverage.md` — 12 coverage items across all risk tiers; approved by mafreen@ariqt.com |
 | 5 — Test Case Design | Complete | 2026-07-15 | 62 test cases consolidated into a single `OUTPUT/Test_Case.md` (one table per domain: ACTIVITY, AUTHOR, BOOK, COVERPHOTO, USER, CATALOG) — every coverage item's promised dimensions are exercised |
-| 6 — Automation Planning | Not Started | — | — |
+| 6 — Automation Planning | Complete | 2026-07-15 | `OUTPUT/Automation_Plan.md` — 35 test cases Automate Now, 27 Automate Later (rule: Positive/Idempotency → Now, Negative/Boundary/Security → Later pending ground truth or tooling); pytest+requests+jsonschema on GitHub Actions |
 | 7 — Traceability Consolidation | Not Started | — | — |
 | 8 — Execution & Reporting | Not Started | — | — |
 | 9 — Regression Loop | N/A | — | Triggered only after an initial full pass exists |
@@ -50,6 +50,7 @@ This file tracks the current state of the QA lifecycle for the project currently
 - **Phase 5 complete:** 62 test cases authored per `TEMPLATES/Test_Case.md`'s fields, consolidated into a single `OUTPUT/Test_Case.md` (table format, one row per test case, grouped by domain) rather than one file per test case — changed at user request on 2026-07-15. All rows are `Status: Not Started` (no execution has occurred yet — that's Phase 8).
 - **Destructive test cases requiring environment confirmation before execution:** all DELETE-based and many PUT-based test cases (e.g., TC-BOOK-007/010/011/012, TC-USER-011/012, TC-CATALOG-003) run against the shared UAT instance. Per `AGENT.md`, confirm environment/data-isolation scope before Phase 8 execution begins.
 - **Key empirical unknowns to resolve during Phase 8 execution** (all flagged across Phases 1–5, no assumptions baked into pass/fail criteria): whether Book deletion orphans Author/CoverPhoto records (TC-BOOK-011/012, TC-CATALOG-003); whether `User.password` is actually exposed in responses (TC-USER-004); actual error status codes across all domains (spec documents only `200` everywhere).
+- **Phase 6 complete:** 35 test cases classified Automate Now (all Positive/Idempotency types — self-contained fixtures, spec-confirmed assertions), 27 Automate Later (Negative/Boundary/Security types — blocked on Phase 8 cycle 1 ground truth or a payload-encoding tooling helper). Backlog targets: most 2026-08-01, high-priority Data Integrity findings (TC-AUTHOR-006, TC-CATALOG-002/004) and the Critical password-exposure check (TC-USER-004) pulled forward to 2026-07-25.
 
 ## Session Log
 
@@ -65,3 +66,4 @@ This file tracks the current state of the QA lifecycle for the project currently
 | 2026-07-15 | User approved Test Coverage Plan and directed to proceed to Phase 5 | mafreen@ariqt.com |
 | 2026-07-15 | Phase 5 (Test Case Design) complete — 62 test cases across all 12 coverage items in `OUTPUT/test_cases/` | agent |
 | 2026-07-15 | Consolidated 62 individual test case files into a single `OUTPUT/Test_Case.md` table per user request; `OUTPUT/test_cases/` directory removed | agent |
+| 2026-07-15 | Phase 6 (Automation Planning) complete — `OUTPUT/Automation_Plan.md`, 35/27 Now/Later split, tooling and CI triggers defined | agent |
