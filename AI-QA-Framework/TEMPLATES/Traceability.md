@@ -9,10 +9,10 @@ This matrix is the single source of truth linking every endpoint through to its 
 
 ## Full Traceability Chain
 
-| Endpoint ID | Workflow ID | Risk ID / Tier | Coverage ID | Test Case ID(s) | Automation Status | Last Result |
-|---|---|---|---|---|---|---|
-| EP-{{DOMAIN}}-001 | WF-{{DOMAIN}}-001 | RISK-{{DOMAIN}}-001 / Critical | COV-{{DOMAIN}}-001 | TC-{{DOMAIN}}-001, TC-{{DOMAIN}}-002 | Automate Now | Passed |
-| EP-{{DOMAIN}}-002 | Standalone | RISK-{{DOMAIN}}-002 / Low | COV-{{DOMAIN}}-002 | TC-{{DOMAIN}}-003 | Manual Only | Not Started |
+| Endpoint ID | Workflow ID | Risk ID / Tier | Coverage ID | Test Case ID(s) | Automation Status | Automation Collection Ref | Last Result |
+|---|---|---|---|---|---|---|---|
+| EP-{{DOMAIN}}-001 | WF-{{DOMAIN}}-001 | RISK-{{DOMAIN}}-001 / Critical | COV-{{DOMAIN}}-001 | TC-{{DOMAIN}}-001, TC-{{DOMAIN}}-002 | Automate Now | {{request name(s) in OUTPUT/automation/, per Automation_Collection_Notes.md}} | Passed |
+| EP-{{DOMAIN}}-002 | Standalone | RISK-{{DOMAIN}}-002 / Low | COV-{{DOMAIN}}-002 | TC-{{DOMAIN}}-003 | Manual Only | N/A — not in the automation collection | Not Started |
 
 ---
 
