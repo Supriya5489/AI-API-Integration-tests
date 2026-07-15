@@ -20,8 +20,8 @@ This file tracks the current state of the QA lifecycle for the project currently
 | 1 — API Inventory | Complete | 2026-07-15 | 27/27 endpoints documented in `OUTPUT/API_Inventory.md` + `OUTPUT/endpoints/` |
 | 2 — Business Workflow Mapping | Complete | 2026-07-15 | 8 workflows identified in `OUTPUT/workflows/`; all 27 endpoints traced to ≥1 workflow |
 | 3 — Risk Assessment | Complete | 2026-07-15 | 11 risk entries in `OUTPUT/Risk_Assessment.md`, covering all 27 endpoints and 8 workflows; 3 Critical, 4 High, 2 Medium/Low groupings |
-| 4 — Test Coverage Planning | Drafted, awaiting approval | 2026-07-15 | `OUTPUT/Test_Coverage.md` produced — 12 coverage items across all risk tiers; **blocked on user sign-off before Phase 5 begins** |
-| 5 — Test Case Design | Not Started | — | — |
+| 4 — Test Coverage Planning | Complete (approved) | 2026-07-15 | `OUTPUT/Test_Coverage.md` — 12 coverage items across all risk tiers; approved by mafreen@ariqt.com |
+| 5 — Test Case Design | Complete | 2026-07-15 | 62 test cases consolidated into a single `OUTPUT/Test_Case.md` (one table per domain: ACTIVITY, AUTHOR, BOOK, COVERPHOTO, USER, CATALOG) — every coverage item's promised dimensions are exercised |
 | 6 — Automation Planning | Not Started | — | — |
 | 7 — Traceability Consolidation | Not Started | — | — |
 | 8 — Execution & Reporting | Not Started | — | — |
@@ -46,8 +46,10 @@ This file tracks the current state of the QA lifecycle for the project currently
 - 8 workflows identified: `WF-ACTIVITY-001`, `WF-USER-001`, `WF-BOOK-001`, `WF-AUTHOR-001`, `WF-AUTHOR-002`, `WF-COVERPHOTO-001`, `WF-COVERPHOTO-002`, `WF-CATALOG-001` (cross-domain composite spanning Book+Author+CoverPhoto — the only genuine multi-resource business process this API supports).
 - **3 Critical risks identified** (`RISK-BOOK-003` — Book delete orphaning; `RISK-USER-002` — User create/update/delete touching plaintext `password`; `RISK-CATALOG-001` — the full cross-domain publishing workflow with no transactional guarantee). These require the deepest coverage in Phase 4/5.
 - Since the entire API is unauthenticated, risk tiers are driven by data sensitivity (`User.password`) and blast radius (Book-deletion orphaning, multi-domain `WF-CATALOG-001`) rather than auth criticality — noted explicitly in `OUTPUT/Risk_Assessment.md`.
-- **Phase 4 gate:** per `WORKFLOW.md`, Test Coverage Plan requires explicit user approval before any Phase 5 test case is authored. `OUTPUT/Test_Coverage.md` is drafted but not yet approved.
-- Two exclusions proposed in the coverage plan need explicit sign-off: (1) Auth & Permissions dimension excluded project-wide (already implied by the Phase 0 unauthenticated confirmation), and (2) rate-limiting/DoS-style security sub-checks excluded by default per `AGENT.md`'s no-destructive-testing-without-confirmation rule.
+- **Phase 4 approved 2026-07-15** — user confirmed to proceed to Phase 5; both proposed exclusions (Auth & Permissions dimension project-wide; rate-limiting/DoS security sub-checks) stand as approved.
+- **Phase 5 complete:** 62 test cases authored per `TEMPLATES/Test_Case.md`'s fields, consolidated into a single `OUTPUT/Test_Case.md` (table format, one row per test case, grouped by domain) rather than one file per test case — changed at user request on 2026-07-15. All rows are `Status: Not Started` (no execution has occurred yet — that's Phase 8).
+- **Destructive test cases requiring environment confirmation before execution:** all DELETE-based and many PUT-based test cases (e.g., TC-BOOK-007/010/011/012, TC-USER-011/012, TC-CATALOG-003) run against the shared UAT instance. Per `AGENT.md`, confirm environment/data-isolation scope before Phase 8 execution begins.
+- **Key empirical unknowns to resolve during Phase 8 execution** (all flagged across Phases 1–5, no assumptions baked into pass/fail criteria): whether Book deletion orphans Author/CoverPhoto records (TC-BOOK-011/012, TC-CATALOG-003); whether `User.password` is actually exposed in responses (TC-USER-004); actual error status codes across all domains (spec documents only `200` everywhere).
 
 ## Session Log
 
@@ -60,3 +62,6 @@ This file tracks the current state of the QA lifecycle for the project currently
 | 2026-07-15 | Phase 2 (Business Workflow Mapping) complete — 8 workflows in `OUTPUT/workflows/`, all endpoint docs updated with Workflow(s) links | agent |
 | 2026-07-15 | Phase 3 (Risk Assessment) complete — `OUTPUT/Risk_Assessment.md` with 11 risk entries; all endpoint and workflow docs updated with Risk tier links | agent |
 | 2026-07-15 | Phase 4 (Test Coverage Planning) drafted — `OUTPUT/Test_Coverage.md` with 12 coverage items; awaiting user approval per WORKFLOW.md hard gate before Phase 5 | agent |
+| 2026-07-15 | User approved Test Coverage Plan and directed to proceed to Phase 5 | mafreen@ariqt.com |
+| 2026-07-15 | Phase 5 (Test Case Design) complete — 62 test cases across all 12 coverage items in `OUTPUT/test_cases/` | agent |
+| 2026-07-15 | Consolidated 62 individual test case files into a single `OUTPUT/Test_Case.md` table per user request; `OUTPUT/test_cases/` directory removed | agent |
