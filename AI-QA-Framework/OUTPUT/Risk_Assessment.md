@@ -1,9 +1,11 @@
-# Risk Assessment — AI Mentor Bot
+# Risk Assessment — Book store
 
 **Assessed on:** 2026-07-15
 **Assessed by:** agent
 
 Risk tiers and criteria are defined in [STANDARDS.md](../STANDARDS.md#5-risk-tiers-for-risk_assessmentmd).
+
+> **Amendment (2026-07-15):** automated smoke-testing (`OUTPUT/automation/`) confirmed the live UAT instance is stateless — writes are validated/echoed but never persisted, and reads always serve a fixed seed dataset. `RISK-BOOK-003` and `RISK-CATALOG-001` below describe risk that is real for any stateful implementation of this contract, but **cannot currently be observed against this specific instance** since there is no persisted data to orphan. The risk tiers and rationale stand unchanged as guidance for testing a real implementation; this note exists so Phase 8 execution isn't misread as "the orphaning bug doesn't exist" when the true finding is "this instance has no state to corrupt."
 
 ---
 

@@ -13,7 +13,7 @@ A standalone task/to-do management process: a user creates an activity (with a t
 
 ## Trigger
 
-Client creates a new activity (e.g., a task the AI Mentor Bot needs to track).
+Client creates a new activity (e.g., a task the Book store needs to track).
 
 ## Steps
 

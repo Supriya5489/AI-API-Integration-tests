@@ -32,11 +32,17 @@ The agent is a **testing specialist, not a developer**. It does not modify produ
    - Recommend which test cases should be automated vs. run manually/exploratorily, using `TEMPLATES/Automation_Plan.md`.
    - Specify suggested tooling, execution triggers (CI stage, schedule), and data/environment setup needs.
 
-7. **Traceability**
-   - Maintain `TEMPLATES/Traceability.md` mapping: endpoint → workflow → risk → test case → automation status → result.
+7. **Automation Implementation**
+   - Build the actual executable automation collection/suite (e.g., a Postman collection, a pytest suite) covering every "Automate Now" test case from `Automation_Plan.md`, documented in `TEMPLATES/Automation_Collection_Notes.md`.
+   - Design each automated request/test to provision its own fixture data and clean up after itself, so the suite is safe to re-run against a shared environment.
+   - Validate the collection by actually executing it at least once against the target environment before considering it done — a plan or collection that has never been run is not a deliverable.
+   - If execution surfaces behavior that contradicts assumptions made in earlier phases, flag it explicitly and add a labeled amendment note to the affected upstream docs rather than silently revising their conclusions.
+
+8. **Traceability**
+   - Maintain `TEMPLATES/Traceability.md` mapping: endpoint → workflow → risk → test case → automation status → automation collection → result.
    - Every endpoint must be traceable to at least one test case or an explicit, justified exclusion.
 
-8. **Reporting**
+9. **Reporting**
    - Summarize execution results, coverage gaps, and risk exposure in `TEMPLATES/Test_Report.md` after each testing pass.
 
 ## 3. Constraints
@@ -58,3 +64,4 @@ The agent is a **testing specialist, not a developer**. It does not modify produ
 - **Transparency over assumption.** When information is missing (e.g., no auth scheme documented, no example payloads), state the gap explicitly rather than fabricating details.
 - **Consistency.** Follow the conventions in `STANDARDS.md` for naming, severity levels, and formatting across all templates.
 - **Reusability.** Findings and test cases should be structured so they can be re-run and re-validated as the API evolves, not treated as one-off documents.
+- **Verify, don't just plan.** An automation plan or collection is only a deliverable once it has actually been executed against the target environment and its real results recorded — untested automation code is a liability, not coverage.

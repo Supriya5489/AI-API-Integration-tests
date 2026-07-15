@@ -1,0 +1,2227 @@
+{
+  "info": {
+    "_postman_id": "a1e9c6d2-4f3b-4b7a-9c2e-aimentorbot-now",
+    "name": "Book store - Automated Regression Suite (Automate Now)",
+    "description": "Automates the 35 'Automate Now' test cases from OUTPUT/Automation_Plan.md (Positive + Idempotency types only). Each folder is self-contained: it provisions its own fixture data, exercises the endpoint(s) under test, and cleans up via delete where applicable, so folders can be run independently or the whole collection can be run end-to-end via Collection Runner or Newman. 'Automate Later' test cases (Negative/Boundary/Security, where the spec does not document an expected error status) are intentionally excluded here per the Automation Plan's classification policy.\n\nIMPORTANT FINDING (2026-07-15): this live API is stateless - POST/PUT/DELETE are validated and echoed with 200 but never actually persisted, and GET only ever serves a fixed, unchanging seed dataset regardless of any writes. 'Get by id' checks therefore target an id discovered from the corresponding list response (a real seed record), not a freshly created one. The CATALOG folder's cross-resource lookups (author/cover-photo by book id) are similarly logged rather than asserted, since the created associations are never actually retrievable. See PROJECT_STATE.md and Risk_Assessment.md for the full implications of this finding.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "ACTIVITY",
+      "item": [
+        {
+          "name": "TC-ACTIVITY-003: Create activity with valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpActivityId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpActivityId');",
+                  "pm.collectionVariables.set('activityId', newId);",
+                  "pm.test('TC-ACTIVITY-003: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-ACTIVITY-003: response is an object', function () { pm.expect(pm.response.json()).to.be.an('object'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Activities",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpActivityId}}\", \"title\": \"QA-Activity-{{tmpActivityId}}\", \"dueDate\": \"2026-08-01T00:00:00.000Z\", \"completed\": false}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-001: List all activities returns full collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-001: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-ACTIVITY-001: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && Array.isArray(json) && json.length > 0) { pm.collectionVariables.set('seedActivityId', json[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Activities"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-002: Get activity by ID returns matching record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-002: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-ACTIVITY-002: id matches requested activity', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.collectionVariables.get('seedActivityId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Activities/{{seedActivityId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-006: Update activity with valid payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-006: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Activities/{{activityId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{activityId}}\", \"title\": \"QA-Activity-Updated-{{activityId}}\", \"dueDate\": \"2026-08-05T00:00:00.000Z\", \"completed\": true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-008: Repeated identical update is idempotent (call 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-008 (call 1): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('activityIdempotentBody1', pm.response.text());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Activities/{{activityId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{activityId}}\", \"title\": \"QA-Activity-Idempotent-{{activityId}}\", \"dueDate\": \"2026-08-05T00:00:00.000Z\", \"completed\": true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-008: Repeated identical update is idempotent (call 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-008 (call 2): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-ACTIVITY-008: repeated call is idempotent (identical response body)', function () {",
+                  "  pm.expect(pm.response.text()).to.eql(pm.collectionVariables.get('activityIdempotentBody1'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Activities/{{activityId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{activityId}}\", \"title\": \"QA-Activity-Idempotent-{{activityId}}\", \"dueDate\": \"2026-08-05T00:00:00.000Z\", \"completed\": true}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-ACTIVITY-009: Delete existing activity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-ACTIVITY-009: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Activities/{{activityId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AUTHOR",
+      "item": [
+        {
+          "name": "Setup: Create book for Author domain tests",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpAuthorDomainBookId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpAuthorDomainBookId');",
+                  "pm.collectionVariables.set('authorDomainBookId', newId);",
+                  "pm.test('Setup (Author domain book): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpAuthorDomainBookId}}\", \"title\": \"QA-Author-Domain-Book-{{tmpAuthorDomainBookId}}\", \"description\": \"Setup fixture for AUTHOR domain automated tests\", \"pageCount\": 100, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-004: Create author with valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpAuthorId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpAuthorId');",
+                  "pm.collectionVariables.set('authorId', newId);",
+                  "pm.test('TC-AUTHOR-004: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpAuthorId}}\", \"idBook\": \"{{authorDomainBookId}}\", \"firstName\": \"QA-Ada\", \"lastName\": \"Lovelace-{{tmpAuthorId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-001: List all authors returns full collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-AUTHOR-001: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-AUTHOR-001: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && Array.isArray(json) && json.length > 0) { pm.collectionVariables.set('seedAuthorId', json[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-002: Get author by ID returns matching record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-AUTHOR-002: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-AUTHOR-002: id matches requested author', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.collectionVariables.get('seedAuthorId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/{{seedAuthorId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-003: Get authors by book ID returns matching authors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-AUTHOR-003: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-AUTHOR-003: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{authorDomainBookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-007: Update author with valid payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-AUTHOR-007: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors/{{authorId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{authorId}}\", \"idBook\": \"{{authorDomainBookId}}\", \"firstName\": \"QA-Ada\", \"lastName\": \"Byron-{{authorId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-AUTHOR-009: Delete existing author",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-AUTHOR-009: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Authors/{{authorId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BOOK",
+      "item": [
+        {
+          "name": "TC-BOOK-003: Create book with valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpBookMainId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpBookMainId');",
+                  "pm.collectionVariables.set('bookIdMain', newId);",
+                  "pm.test('TC-BOOK-003: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpBookMainId}}\", \"title\": \"QA-Book-Main-{{tmpBookMainId}}\", \"description\": \"A guide to practical QA.\", \"pageCount\": 250, \"excerpt\": \"Chapter 1...\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-001: List all books returns full collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-001: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-BOOK-001: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && Array.isArray(json) && json.length > 0) { pm.collectionVariables.set('seedBookId', json[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Books"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-002: Get book by ID returns matching record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-002: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-BOOK-002: id matches requested book', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.collectionVariables.get('seedBookId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Books/{{seedBookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-005: Update book with valid payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-005: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdMain}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{bookIdMain}}\", \"title\": \"QA-Book-Main-Updated-{{bookIdMain}}\", \"description\": \"Updated guide.\", \"pageCount\": 275, \"excerpt\": \"Chapter 1 (revised)...\", \"publishDate\": \"2026-02-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create throwaway book (no dependents) for TC-BOOK-007",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpBookDelete1Id', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpBookDelete1Id');",
+                  "pm.collectionVariables.set('bookIdDelete1', newId);",
+                  "pm.test('Setup (TC-BOOK-007 fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpBookDelete1Id}}\", \"title\": \"QA-Book-Delete1-{{tmpBookDelete1Id}}\", \"description\": \"d\", \"pageCount\": 10, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-007: Delete book with no dependent records",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-007: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdDelete1}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create throwaway book for TC-BOOK-010 (idempotency)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpBookDelete2Id', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpBookDelete2Id');",
+                  "pm.collectionVariables.set('bookIdDelete2', newId);",
+                  "pm.test('Setup (TC-BOOK-010 fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpBookDelete2Id}}\", \"title\": \"QA-Book-Delete2-{{tmpBookDelete2Id}}\", \"description\": \"d\", \"pageCount\": 10, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-010: Repeated delete of the same book (call 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-010 (call 1): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdDelete2}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-010: Repeated delete of the same book (call 2 - idempotency check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-010 (call 2): does not error with a 5xx', function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "pm.test('TC-BOOK-010: record actual repeat-delete status for Phase 8 ground truth', function () {",
+                  "  console.log('TC-BOOK-010 repeat delete status:', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdDelete2}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create book for TC-BOOK-011 (author orphan check)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpBookOrphanAId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpBookOrphanAId');",
+                  "pm.collectionVariables.set('bookIdOrphanA', newId);",
+                  "pm.test('Setup (TC-BOOK-011 book fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpBookOrphanAId}}\", \"title\": \"QA-Book-OrphanA-{{tmpBookOrphanAId}}\", \"description\": \"d\", \"pageCount\": 10, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create author referencing TC-BOOK-011's book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpAuthorOrphanId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpAuthorOrphanId');",
+                  "pm.collectionVariables.set('authorIdOrphan', newId);",
+                  "pm.test('Setup (TC-BOOK-011 author fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpAuthorOrphanId}}\", \"idBook\": \"{{bookIdOrphanA}}\", \"firstName\": \"QA-Orphan\", \"lastName\": \"Author-{{tmpAuthorOrphanId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Confirm author is retrievable via book lookup (pre-delete baseline)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Setup (TC-BOOK-011 pre-delete baseline): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{bookIdOrphanA}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-011: Delete book with an associated author (orphaning check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-011: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdOrphanA}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-011: Verify author lookup behavior after book deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-011: does not error with a 5xx after book deletion', function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "pm.test('TC-BOOK-011: record actual post-delete author-lookup behavior for Phase 8 ground truth (orphaning check, RISK-BOOK-003)', function () {",
+                  "  console.log('TC-BOOK-011 post-delete lookup status:', pm.response.code, 'body:', pm.response.text());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{bookIdOrphanA}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create book for TC-BOOK-012 (cover photo orphan check)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpBookOrphanBId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpBookOrphanBId');",
+                  "pm.collectionVariables.set('bookIdOrphanB', newId);",
+                  "pm.test('Setup (TC-BOOK-012 book fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpBookOrphanBId}}\", \"title\": \"QA-Book-OrphanB-{{tmpBookOrphanBId}}\", \"description\": \"d\", \"pageCount\": 10, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Create cover photo referencing TC-BOOK-012's book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCoverOrphanId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCoverOrphanId');",
+                  "pm.collectionVariables.set('coverIdOrphan', newId);",
+                  "pm.test('Setup (TC-BOOK-012 cover photo fixture): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCoverOrphanId}}\", \"idBook\": \"{{bookIdOrphanB}}\", \"url\": \"https://example.com/qa-orphan-cover-{{tmpCoverOrphanId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup: Confirm cover photo is retrievable via book lookup (pre-delete baseline)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Setup (TC-BOOK-012 pre-delete baseline): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{bookIdOrphanB}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-012: Delete book with an associated cover photo (orphaning check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-012: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{bookIdOrphanB}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-BOOK-012: Verify cover photo lookup behavior after book deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-BOOK-012: does not error with a 5xx after book deletion', function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "pm.test('TC-BOOK-012: record actual post-delete cover-photo-lookup behavior for Phase 8 ground truth (orphaning check, RISK-BOOK-003)', function () {",
+                  "  console.log('TC-BOOK-012 post-delete lookup status:', pm.response.code, 'body:', pm.response.text());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{bookIdOrphanB}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "COVERPHOTO",
+      "item": [
+        {
+          "name": "Setup: Create book for CoverPhoto domain tests",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCoverDomainBookId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCoverDomainBookId');",
+                  "pm.collectionVariables.set('coverDomainBookId', newId);",
+                  "pm.test('Setup (CoverPhoto domain book): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCoverDomainBookId}}\", \"title\": \"QA-CoverPhoto-Domain-Book-{{tmpCoverDomainBookId}}\", \"description\": \"Setup fixture for COVERPHOTO domain automated tests\", \"pageCount\": 100, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-004: Create cover photo with valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCoverPhotoId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCoverPhotoId');",
+                  "pm.collectionVariables.set('coverPhotoId', newId);",
+                  "pm.test('TC-COVERPHOTO-004: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCoverPhotoId}}\", \"idBook\": \"{{coverDomainBookId}}\", \"url\": \"https://example.com/covers/qa-pragmatic-tester-{{tmpCoverPhotoId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-001: List all cover photos returns full collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-COVERPHOTO-001: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-COVERPHOTO-001: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && Array.isArray(json) && json.length > 0) { pm.collectionVariables.set('seedCoverPhotoId', json[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-002: Get cover photo by ID returns matching record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-COVERPHOTO-002: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-COVERPHOTO-002: id matches requested cover photo', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.collectionVariables.get('seedCoverPhotoId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/{{seedCoverPhotoId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-003: Get cover photos by book ID returns matching photos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-COVERPHOTO-003: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-COVERPHOTO-003: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{coverDomainBookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-007: Update cover photo with valid payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-COVERPHOTO-007: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/{{coverPhotoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{coverPhotoId}}\", \"idBook\": \"{{coverDomainBookId}}\", \"url\": \"https://example.com/covers/qa-pragmatic-tester-v2-{{coverPhotoId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-COVERPHOTO-009: Delete existing cover photo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-COVERPHOTO-009: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/{{coverPhotoId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "USER",
+      "item": [
+        {
+          "name": "TC-USER-005: Create user with valid payload",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpUserId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpUserId');",
+                  "pm.collectionVariables.set('userId', newId);",
+                  "pm.test('TC-USER-005: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpUserId}}\", \"userName\": \"qa.create.test.{{tmpUserId}}\", \"password\": \"Test-Password-123\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-001: List all users returns full collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-001: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-USER-001: response is an array', function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "if (json && Array.isArray(json) && json.length > 0) { pm.collectionVariables.set('seedUserId', json[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Users"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-002: Get user by ID returns matching record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-002: status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-USER-002: id matches requested user', function () {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(String(json.id)).to.eql(String(pm.collectionVariables.get('seedUserId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Users/{{seedUserId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-008: Update user with valid payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-008: status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{userId}}\", \"userName\": \"qa.create.test.{{userId}}\", \"password\": \"New-Test-Password-456\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-010: Repeated identical update is idempotent (call 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-010 (call 1): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('userIdempotentBody1', pm.response.text());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{userId}}\", \"userName\": \"qa.idempotency.test.{{userId}}\", \"password\": \"Idempotent-Password-789\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-010: Repeated identical update is idempotent (call 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-010 (call 2): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-USER-010: repeated call is idempotent (identical response body)', function () {",
+                  "  pm.expect(pm.response.text()).to.eql(pm.collectionVariables.get('userIdempotentBody1'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{userId}}\", \"userName\": \"qa.idempotency.test.{{userId}}\", \"password\": \"Idempotent-Password-789\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-011: Delete existing user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-011 (delete): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Users/{{userId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-USER-011: Repeat delete on now-deleted user (error handling check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-USER-011 (repeat delete): does not error with a 5xx', function () {",
+                  "  pm.expect(pm.response.code).to.be.below(500);",
+                  "});",
+                  "pm.test('TC-USER-011: record actual repeat-delete status for Phase 8 ground truth', function () {",
+                  "  console.log('TC-USER-011 repeat delete status:', pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Users/{{userId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CATALOG (WF-CATALOG-001)",
+      "item": [
+        {
+          "name": "TC-CATALOG-001 (1/6): Create book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog1BookId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog1BookId');",
+                  "pm.collectionVariables.set('catalog1BookId', newId);",
+                  "pm.test('TC-CATALOG-001 (1/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog1BookId}}\", \"title\": \"QA-Catalog-HappyPath-Book-{{tmpCatalog1BookId}}\", \"description\": \"d\", \"pageCount\": 100, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-001 (2/6): Create author referencing the book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog1AuthorId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog1AuthorId');",
+                  "pm.collectionVariables.set('catalog1AuthorId', newId);",
+                  "pm.test('TC-CATALOG-001 (2/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog1AuthorId}}\", \"idBook\": \"{{catalog1BookId}}\", \"firstName\": \"QA-Catalog\", \"lastName\": \"Author-{{tmpCatalog1AuthorId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-001 (3/6): Create cover photo referencing the book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog1CoverId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog1CoverId');",
+                  "pm.collectionVariables.set('catalog1CoverId', newId);",
+                  "pm.test('TC-CATALOG-001 (3/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog1CoverId}}\", \"idBook\": \"{{catalog1BookId}}\", \"url\": \"https://example.com/qa-catalog-cover-{{tmpCatalog1CoverId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-001 (4/6): Retrieve the book (documents stateless-backend limitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-001 (4/6): does not error with a 5xx', function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "pm.test('TC-CATALOG-001 (4/6): API is stateless (2026-07-15 finding) - a freshly created book is not retrievable by id; this call documents that, it does not assert 200', function () {",
+                  "  console.log('TC-CATALOG-001 (4/6) status:', pm.response.code, 'body:', pm.response.text());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Books/{{catalog1BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-001 (5/6): Retrieve authors by book ID (documents stateless-backend limitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-001 (5/6): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-CATALOG-001 (5/6): log whether the just-created author appears (expected: it will not, per the 2026-07-15 statelessness finding)', function () {",
+                  "  const json = pm.response.json();",
+                  "  const ids = json.map(function (a) { return String(a.id); });",
+                  "  console.log('TC-CATALOG-001 (5/6) authors returned:', ids, '- created author id was:', pm.collectionVariables.get('catalog1AuthorId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{catalog1BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-001 (6/6): Retrieve cover photos by book ID (documents stateless-backend limitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-001 (6/6): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-CATALOG-001 (6/6): log whether the just-created cover photo appears (expected: it will not, per the 2026-07-15 statelessness finding)', function () {",
+                  "  const json = pm.response.json();",
+                  "  const ids = json.map(function (c) { return String(c.id); });",
+                  "  console.log('TC-CATALOG-001 (6/6) cover photos returned:', ids, '- created cover photo id was:', pm.collectionVariables.get('catalog1CoverId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{catalog1BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (1/6): Create book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog3BookId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog3BookId');",
+                  "pm.collectionVariables.set('catalog3BookId', newId);",
+                  "pm.test('TC-CATALOG-003 (1/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog3BookId}}\", \"title\": \"QA-Catalog-DeleteCheck-Book-{{tmpCatalog3BookId}}\", \"description\": \"d\", \"pageCount\": 100, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (2/6): Create author referencing the book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog3AuthorId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog3AuthorId');",
+                  "pm.collectionVariables.set('catalog3AuthorId', newId);",
+                  "pm.test('TC-CATALOG-003 (2/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog3AuthorId}}\", \"idBook\": \"{{catalog3BookId}}\", \"firstName\": \"QA-Catalog3\", \"lastName\": \"Author-{{tmpCatalog3AuthorId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (3/6): Create cover photo referencing the book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog3CoverId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog3CoverId');",
+                  "pm.collectionVariables.set('catalog3CoverId', newId);",
+                  "pm.test('TC-CATALOG-003 (3/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog3CoverId}}\", \"idBook\": \"{{catalog3BookId}}\", \"url\": \"https://example.com/qa-catalog3-cover-{{tmpCatalog3CoverId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (4/6): Delete the book",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-003 (4/6): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/Books/{{catalog3BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (5/6): Verify author-by-book lookup after deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-003 (5/6): does not error with a 5xx', function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "pm.test('TC-CATALOG-003: record actual post-delete author-lookup behavior (composite workflow orphaning, RISK-CATALOG-001)', function () {",
+                  "  console.log('TC-CATALOG-003 author lookup status:', pm.response.code, 'body:', pm.response.text());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{catalog3BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-003 (6/6): Verify cover-photo-by-book lookup after deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-003 (6/6): does not error with a 5xx', function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "pm.test('TC-CATALOG-003: record actual post-delete cover-photo-lookup behavior (composite workflow orphaning, RISK-CATALOG-001)', function () {",
+                  "  console.log('TC-CATALOG-003 cover photo lookup status:', pm.response.code, 'body:', pm.response.text());",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{catalog3BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (1/7): Create book",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog6BookId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog6BookId');",
+                  "pm.collectionVariables.set('catalog6BookId', newId);",
+                  "pm.test('TC-CATALOG-006 (1/7): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog6BookId}}\", \"title\": \"QA-Catalog-MultiAssoc-Book-{{tmpCatalog6BookId}}\", \"description\": \"d\", \"pageCount\": 100, \"excerpt\": \"e\", \"publishDate\": \"2026-01-01T00:00:00.000Z\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (2/7): Create first co-author",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog6AuthorAId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog6AuthorAId');",
+                  "pm.collectionVariables.set('catalog6AuthorAId', newId);",
+                  "pm.test('TC-CATALOG-006 (2/7): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog6AuthorAId}}\", \"idBook\": \"{{catalog6BookId}}\", \"firstName\": \"First\", \"lastName\": \"QA-CoAuthor-{{tmpCatalog6AuthorAId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (3/7): Create second co-author",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog6AuthorBId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog6AuthorBId');",
+                  "pm.collectionVariables.set('catalog6AuthorBId', newId);",
+                  "pm.test('TC-CATALOG-006 (3/7): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/Authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog6AuthorBId}}\", \"idBook\": \"{{catalog6BookId}}\", \"firstName\": \"Second\", \"lastName\": \"QA-CoAuthor-{{tmpCatalog6AuthorBId}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (4/7): Create first cover photo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog6CoverAId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog6CoverAId');",
+                  "pm.collectionVariables.set('catalog6CoverAId', newId);",
+                  "pm.test('TC-CATALOG-006 (4/7): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog6CoverAId}}\", \"idBook\": \"{{catalog6BookId}}\", \"url\": \"https://example.com/qa-catalog6-cover-front-{{tmpCatalog6CoverAId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (5/7): Create second cover photo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('tmpCatalog6CoverBId', (Date.now() % 1900000000) + Math.floor(Math.random()*1000));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = null;",
+                  "try { json = pm.response.json(); } catch (e) { json = null; }",
+                  "let newId = (json && typeof json.id !== 'undefined') ? json.id : pm.collectionVariables.get('tmpCatalog6CoverBId');",
+                  "pm.collectionVariables.set('catalog6CoverBId', newId);",
+                  "pm.test('TC-CATALOG-006 (5/7): status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/CoverPhotos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"id\": \"{{tmpCatalog6CoverBId}}\", \"idBook\": \"{{catalog6BookId}}\", \"url\": \"https://example.com/qa-catalog6-cover-back-{{tmpCatalog6CoverBId}}.jpg\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (6/7): Verify both authors are associated with the book (documents stateless-backend limitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-006 (6/7): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-CATALOG-006 (6/7): log whether co-authors appear (expected: they will not, per the 2026-07-15 statelessness finding)', function () {",
+                  "  const json = pm.response.json();",
+                  "  const ids = json.map(function (a) { return String(a.id); });",
+                  "  console.log('TC-CATALOG-006 (6/7) authors returned:', ids, '- created author ids were:', pm.collectionVariables.get('catalog6AuthorAId'), pm.collectionVariables.get('catalog6AuthorBId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/Authors/authors/books/{{catalog6BookId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TC-CATALOG-006 (7/7): Verify both cover photos are associated with the book (documents stateless-backend limitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('TC-CATALOG-006 (7/7): status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('TC-CATALOG-006 (7/7): log whether cover photos appear (expected: they will not, per the 2026-07-15 statelessness finding)', function () {",
+                  "  const json = pm.response.json();",
+                  "  const ids = json.map(function (c) { return String(c.id); });",
+                  "  console.log('TC-CATALOG-006 (7/7) cover photos returned:', ids, '- created cover photo ids were:', pm.collectionVariables.get('catalog6CoverAId'), pm.collectionVariables.get('catalog6CoverBId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/CoverPhotos/books/covers/{{catalog6BookId}}"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://fakerestapi.azurewebsites.net",
+      "type": "string"
+    }
+  ]
+}
